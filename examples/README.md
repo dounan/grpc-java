@@ -1,5 +1,32 @@
-grpc Examples
-==============================================
+# Testing LB
+
+Follow the instructions [here](https://github.com/dounan/grpc/blob/master/examples/README.md) to setup DNS and other system configurations.
+
+Build
+
+```
+./gradlew installDist
+```
+
+Start two servers
+
+```
+PORT=50051 ./build/install/examples/bin/hello-world-server
+```
+
+```
+PORT=50052 ./build/install/examples/bin/hello-world-server
+```
+
+Start the client. Hit `ENTER` to send another request. Type any character and hit `ENTER` to quit
+
+```
+./build/install/examples/bin/hello-world-client
+```
+
+# ==== Original README ====
+
+# grpc Examples
 
 The examples require grpc-java to already be built. You are strongly encouraged
 to check out a git release tag, since there will already be a build of grpc
@@ -50,6 +77,7 @@ before trying out the examples.
           "hedgingDelay": "1s"
         }
   ```
+
   Then the latency summary in the client log is like the following
 
   ```text
@@ -92,6 +120,7 @@ before trying out the examples.
 1. **[Install gRPC Java library SNAPSHOT locally, including code generation plugin](../COMPILING.md) (Only need this step for non-released versions, e.g. master HEAD).**
 
 2. From grpc-java/examples directory:
+
 ```
 $ ./gradlew installDist
 ```
@@ -122,9 +151,11 @@ information.
 ### Maven
 
 If you prefer to use Maven:
+
 1. **[Install gRPC Java library SNAPSHOT locally, including code generation plugin](../COMPILING.md) (Only need this step for non-released versions, e.g. master HEAD).**
 
 2. Run in this directory:
+
 ```
 $ mvn verify
 $ # Run the server
@@ -136,6 +167,7 @@ $ mvn exec:java -Dexec.mainClass=io.grpc.examples.helloworld.HelloWorldClient
 ### Bazel
 
 If you prefer to use Bazel:
+
 ```
 $ bazel build :hello-world-server :hello-world-client
 $ # Run the server
@@ -150,9 +182,9 @@ $ bazel-bin/hello-world-client
 
 - Secure channel examples
 
-  + [TLS examples](example-tls)
+  - [TLS examples](example-tls)
 
-  + [ALTS examples](example-alts)
+  - [ALTS examples](example-alts)
 
 - [Google Authentication](example-gauth)
 
@@ -172,17 +204,17 @@ examples to write unit tests. `InProcessTransport` is light-weight and runs the 
 and client in the same process without any socket/TCP connection.
 
 Mocking the client stub provides a false sense of security when writing tests. Mocking stubs and responses
-allows for tests that don't map to reality, causing the tests to pass, but the system-under-test to fail. 
+allows for tests that don't map to reality, causing the tests to pass, but the system-under-test to fail.
 The gRPC client library is complicated, and accurately reproducing that complexity with mocks is very hard.
 You will be better off and write less code by using `InProcessTransport` instead.
 
 Example bugs not caught by mocked stub tests include:
 
-* Calling the stub with a `null` message
-* Not calling `close()`
-* Sending invalid headers
-* Ignoring deadlines
-* Ignoring cancellation
+- Calling the stub with a `null` message
+- Not calling `close()`
+- Sending invalid headers
+- Ignoring deadlines
+- Ignoring cancellation
 
 For testing a gRPC client, create the client with a real stub
 using an

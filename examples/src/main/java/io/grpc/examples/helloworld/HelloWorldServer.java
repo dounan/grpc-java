@@ -32,16 +32,14 @@ public class HelloWorldServer {
 
   private void start() throws IOException {
     /* The port on which the server should run */
-    int port = 50051;
-    server = ServerBuilder.forPort(port)
-        .addService(new GreeterImpl())
-        .build()
-        .start();
+    int port = Integer.parseInt(System.getenv("PORT"));
+    server = ServerBuilder.forPort(port).addService(new GreeterImpl()).build().start();
     logger.info("Server started, listening on " + port);
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
-        // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+        // Use stderr here since the logger may have been reset by its JVM shutdown
+        // hook.
         System.err.println("*** shutting down gRPC server since JVM is shutting down");
         HelloWorldServer.this.stop();
         System.err.println("*** server shut down");
@@ -56,7 +54,8 @@ public class HelloWorldServer {
   }
 
   /**
-   * Await termination on the main thread since the grpc library uses daemon threads.
+   * Await termination on the main thread since the grpc library uses daemon
+   * threads.
    */
   private void blockUntilShutdown() throws InterruptedException {
     if (server != null) {
@@ -77,6 +76,7 @@ public class HelloWorldServer {
 
     @Override
     public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+      logger.info("Received say_hello: " + req.toString());
       HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();

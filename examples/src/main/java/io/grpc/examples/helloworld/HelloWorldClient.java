@@ -19,6 +19,8 @@ package io.grpc.examples.helloworld;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,13 +37,19 @@ public class HelloWorldClient {
   /** Construct client connecting to HelloWorld server at {@code host:port}. */
   public HelloWorldClient(String host, int port) {
     this(ManagedChannelBuilder.forAddress(host, port)
-        // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
+
+        // Enable client side LB
+        .defaultLoadBalancingPolicy("round_robin")
+
+        // Channels are secure by default (via SSL/TLS). For the example we disable TLS
+        // to avoid
         // needing certificates.
-        .usePlaintext()
-        .build());
+        .usePlaintext().build());
   }
 
-  /** Construct client for accessing HelloWorld server using the existing channel. */
+  /**
+   * Construct client for accessing HelloWorld server using the existing channel.
+   */
   HelloWorldClient(ManagedChannel channel) {
     this.channel = channel;
     blockingStub = GreeterGrpc.newBlockingStub(channel);
@@ -52,33 +60,39 @@ public class HelloWorldClient {
   }
 
   /** Say hello to server. */
-  public void greet(String name) {
+  public void greet(String name, int count) {
     logger.info("Will try to greet " + name + " ...");
     HelloRequest request = HelloRequest.newBuilder().setName(name).build();
     HelloReply response;
     try {
       response = blockingStub.sayHello(request);
     } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      logger.log(Level.WARNING, "RPC {0} failed: {1}", new Object[] { count, e.getStatus() });
       return;
     }
-    logger.info("Greeting: " + response.getMessage());
+    logger.info("Greeting " + String.valueOf(count) + ": " + response.getMessage());
   }
 
   /**
-   * Greet server. If provided, the first element of {@code args} is the name to use in the
-   * greeting.
+   * Greet server. If provided, the first element of {@code args} is the name to
+   * use in the greeting.
    */
   public static void main(String[] args) throws Exception {
-    // Access a service running on the local machine on port 50051
-    HelloWorldClient client = new HelloWorldClient("localhost", 50051);
+    HelloWorldClient client = new HelloWorldClient("grpc.dounan.test", 50050);
     try {
       String user = "world";
       // Use the arg as the name to greet if provided
       if (args.length > 0) {
         user = args[0];
       }
-      client.greet(user);
+      Scanner scanner = new Scanner(System.in);
+      String result = "";
+      int count = 1;
+      while (result.equals("")) {
+        client.greet(user, count);
+        result = scanner.nextLine().trim();
+        count++;
+      }
     } finally {
       client.shutdown();
     }
