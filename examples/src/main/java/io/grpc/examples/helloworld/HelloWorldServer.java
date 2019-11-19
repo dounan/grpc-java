@@ -78,6 +78,12 @@ public class HelloWorldServer {
     public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
       logger.info("Received say_hello: " + req.toString());
       HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }

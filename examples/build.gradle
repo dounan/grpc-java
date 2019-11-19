@@ -39,6 +39,9 @@ dependencies {
     testImplementation "io.grpc:grpc-testing:${grpcVersion}"
     testImplementation "junit:junit:4.12"
     testImplementation "org.mockito:mockito-core:2.28.2"
+
+    compile group: 'com.newrelic.agent.java', name: 'newrelic-agent', version: '5.8.0'
+    compile group: 'com.newrelic.agent.java', name: 'newrelic-api', version: '5.8.0'
 }
 
 protobuf {
@@ -82,6 +85,11 @@ task helloWorldServer(type: CreateStartScripts) {
     applicationName = 'hello-world-server'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
+    defaultJvmOpts = [
+        "-javaagent:build/install/examples/lib/newrelic-agent-5.8.0.jar",
+        "-Dnewrelic.config.file=newrelic-server.yml",
+        "-Dnewrelic.environment=development"
+    ]
 }
 
 task helloWorldClient(type: CreateStartScripts) {
@@ -89,6 +97,11 @@ task helloWorldClient(type: CreateStartScripts) {
     applicationName = 'hello-world-client'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
+    defaultJvmOpts = [
+        "-javaagent:build/install/examples/lib/newrelic-agent-5.8.0.jar",
+        "-Dnewrelic.config.file=newrelic-client.yml",
+        "-Dnewrelic.environment=development"
+    ]
 }
 
 task hedgingHelloWorldServer(type: CreateStartScripts) {

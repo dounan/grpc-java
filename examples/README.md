@@ -24,6 +24,8 @@ Start the client. Hit `ENTER` to send another request. Type any character and hi
 ./build/install/examples/bin/hello-world-client
 ```
 
+# NewRelic gRPC client instrumentation
+
 # ==== Original README ====
 
 # grpc Examples

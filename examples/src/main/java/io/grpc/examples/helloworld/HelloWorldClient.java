@@ -16,14 +16,27 @@
 
 package io.grpc.examples.helloworld;
 
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.StatusRuntimeException;
-
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.newrelic.api.agent.NewRelic;
+import com.newrelic.api.agent.Token;
+import com.newrelic.api.agent.Trace;
+
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ForwardingClientCall;
+import io.grpc.ForwardingClientCallListener;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 /**
  * A simple client that requests a greeting from the {@link HelloWorldServer}.
@@ -40,6 +53,8 @@ public class HelloWorldClient {
 
         // Enable client side LB
         .defaultLoadBalancingPolicy("round_robin")
+
+        .intercept(new NewRelicInterceptor())
 
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS
         // to avoid
@@ -73,12 +88,38 @@ public class HelloWorldClient {
     logger.info("Greeting " + String.valueOf(count) + ": " + response.getMessage());
   }
 
+  private static class NewRelicInterceptor implements ClientInterceptor {
+    @Override
+    @Trace(dispatcher = true)
+    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
+        CallOptions callOptions, Channel next) {
+      NewRelic.setTransactionName(null, method.getFullMethodName());
+      final Token token = NewRelic.getAgent().getTransaction().getToken();
+      return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
+        @Override
+        public void start(Listener<RespT> responseListener, Metadata headers) {
+          super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {
+            @Override
+            @Trace(async = true)
+            public void onClose(Status status, Metadata trailers) {
+              token.linkAndExpire();
+              super.onClose(status, trailers);
+            }
+          }, headers);
+        }
+      };
+    }
+  }
+
   /**
    * Greet server. If provided, the first element of {@code args} is the name to
    * use in the greeting.
    */
   public static void main(String[] args) throws Exception {
-    HelloWorldClient client = new HelloWorldClient("grpc.dounan.test", 50050);
+    Thread.sleep(5000);
+
+    // HelloWorldClient client = new HelloWorldClient("grpc.dounan.test", 50050);
+    HelloWorldClient client = new HelloWorldClient("localhost", 50051);
     try {
       String user = "world";
       // Use the arg as the name to greet if provided
@@ -93,6 +134,7 @@ public class HelloWorldClient {
         result = scanner.nextLine().trim();
         count++;
       }
+      scanner.close();
     } finally {
       client.shutdown();
     }
